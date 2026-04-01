@@ -1,4 +1,4 @@
-# 📚 School Management System (SMS)
+#  School Management System (SMS)
 
 A comprehensive, role-based School Management System built with modern web technologies. Streamline academic administration, student management, faculty coordination, and financial operations in one unified platform.
 
@@ -30,38 +30,25 @@ A comprehensive, role-based School Management System built with modern web techn
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** with TypeScript
+- **React** with TypeScript
 - **Tailwind CSS** for styling
-- **React Router v6** for navigation
+- **React Router ** for navigation
 - **React Query** for data fetching
 - **Recharts** for data visualization
-- **Axios** for API calls
 - **React Hook Form** with Zod validation
 
 ### Backend
 - **Node.js** with Express
 - **PostgreSQL** database
-- **Prisma ORM**
 - **JWT** for authentication
 - **Bcrypt** for password hashing
 - **Express Validator** for input validation
 
-### DevOps & Tools
-- **Docker** for containerization
-- **GitHub Actions** for CI/CD
-- **ESLint** & **Prettier** for code quality
-- **Husky** for git hooks
 
-## 📋 Prerequisites
-
-- Node.js (v18 or higher)
-- PostgreSQL (v14 or higher)
-- npm or yarn package manager
-- Git
 
 ## 🚀 Getting Started
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/school-management-system.git
-cd school-management-system
+git clone https://github.com/yalem-05/campus-connect.git
+cd campus-connect
