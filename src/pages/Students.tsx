@@ -1,6 +1,9 @@
+// Students.tsx (updated)
+import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { students, departments } from "@/data/mockData";
+import { StudentForm } from "./StudentC/StudentForm";
 
 const columns = [
   { key: "studentId", label: "ID" },
@@ -37,13 +40,41 @@ const columns = [
 ];
 
 export default function Students() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const handleAddStudent = () => {
+    setIsFormOpen(true);
+  };
+
+  const handleSubmitStudent = (data: any) => {
+    console.log("New student data:", data);
+    // Here you would typically make an API call to save the student
+    // and then refresh the students list
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Students</h1>
-        <p className="text-sm text-muted-foreground">Manage student records and enrollments.</p>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Students</h1>
+          <p className="text-sm text-muted-foreground">Manage student records and enrollments.</p>
+        </div>
+        <DataTable 
+          data={students} 
+          columns={columns} 
+          searchKey="firstName" 
+          title="All Students" 
+          addLabel="Add Student" 
+          onAdd={handleAddStudent} 
+        />
       </div>
-      <DataTable data={students} columns={columns} searchKey="firstName" title="All Students" addLabel="Add Student" onAdd={() => {}} />
-    </div>
+
+      <StudentForm 
+        open={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleSubmitStudent}
+        mode="add"
+      />
+    </>
   );
 }

@@ -17,6 +17,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import FacultyPage from "./pages/FacultyPage";
+import Staff from "./pages/Staff";
 import Courses from "./pages/Courses";
 import Departments from "./pages/Departments";
 import Enrollments from "./pages/Enrollments";
@@ -47,9 +48,9 @@ function ProtectedRoute({
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
+  // if (!isAuthenticated) {
+  //   return <Navigate to="/login" state={{ from: location }} replace />;
+  // }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     const rolePath = user.role.toLowerCase();
@@ -264,7 +265,7 @@ function AppRoutes() {
       } />
       <Route path="/admin/staff" element={
         <ProtectedRoute allowedRoles={["Admin"] as UserRole[]}>
-          <AppLayout><FacultyPage /></AppLayout>
+          <AppLayout><Staff /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/courses" element={

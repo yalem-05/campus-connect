@@ -1,6 +1,10 @@
+// Enrollments.tsx (updated)
+import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { enrollments, students, courses } from "@/data/mockData";
+import { EnrollmentForm } from "./Enrollment/EnrollmentForm";
+import { toast } from "@/components/ui/use-toast";
 
 const columns = [
   {
@@ -34,13 +38,59 @@ const columns = [
 ];
 
 export default function Enrollments() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [enrollmentsList, setEnrollmentsList] = useState(enrollments);
+
+  const handleAddEnrollment = () => {
+    setIsFormOpen(true);
+  };
+
+  const handleSubmitEnrollment = (data: any) => {
+    const newEnrollment = {
+      id: enrollmentsList.length + 1,
+      guid: `e${enrollmentsList.length + 1}`,
+      ...data,
+      createdDate: new Date().toISOString().split('T')[0],
+      isActive: true,
+    };
+    
+    setEnrollmentsList([...enrollmentsList, newEnrollment]);
+    
+    // Get student and course names for the toast message
+    const student = students.find(s => s.id === data.studentId);
+    const course = courses.find(c => c.id === data.courseId);
+    
+    toast({
+      title: "Enrollment Created",
+      description: `${student?.firstName} ${student?.lastName} enrolled in ${course?.courseName} for ${data.semester} ${data.academicYear}.`,
+    });
+    
+    setIsFormOpen(false);
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Enrollments</h1>
-        <p className="text-sm text-muted-foreground">Track course enrollments and registrations.</p>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Enrollments</h1>
+          <p className="text-sm text-muted-foreground">Track course enrollments and registrations.</p>
+        </div>
+        <DataTable 
+          data={enrollmentsList} 
+          columns={columns} 
+          searchKey="semester" 
+          title="All Enrollments" 
+          addLabel="New Enrollment" 
+          onAdd={handleAddEnrollment} 
+        />
       </div>
-      <DataTable data={enrollments} columns={columns} searchKey="semester" title="All Enrollments" addLabel="New Enrollment" onAdd={() => {}} />
-    </div>
+
+      <EnrollmentForm 
+        open={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleSubmitEnrollment}
+        mode="add"
+      />
+    </>
   );
 }

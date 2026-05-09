@@ -1,7 +1,11 @@
+// FacultyPage.tsx (updated)
+import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { faculty, departments } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
+import { FacultyForm } from "./Faculity/FaculityForm";
+import { toast } from "@/components/ui/use-toast";
 
 const columns = [
   { key: "facultyId", label: "ID" },
@@ -39,13 +43,57 @@ const columns = [
 ];
 
 export default function FacultyPage() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [facultyList, setFacultyList] = useState(faculty);
+
+  const handleAddFaculty = () => {
+    setIsFormOpen(true);
+  };
+
+  const handleSubmitFaculty = (data: any) => {
+    // Add Dr. prefix to first name for display purposes
+    const newFaculty = {
+      id: facultyList.length + 1,
+      guid: `f${facultyList.length + 1}`,
+      ...data,
+      firstName: `Dr. ${data.firstName}`,
+      createdDate: new Date().toISOString().split('T')[0],
+      isActive: true,
+    };
+    
+    setFacultyList([...facultyList, newFaculty]);
+    
+    toast({
+      title: "Faculty Member Added",
+      description: `${newFaculty.firstName} ${newFaculty.lastName} has been added successfully.`,
+    });
+    
+    setIsFormOpen(false);
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Faculty</h1>
-        <p className="text-sm text-muted-foreground">Manage faculty members and assignments.</p>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Faculty</h1>
+          <p className="text-sm text-muted-foreground">Manage faculty members and assignments.</p>
+        </div>
+        <DataTable 
+          data={facultyList} 
+          columns={columns} 
+          searchKey="lastName" 
+          title="All Faculty" 
+          addLabel="Add Faculty" 
+          onAdd={handleAddFaculty} 
+        />
       </div>
-      <DataTable data={faculty} columns={columns} searchKey="lastName" title="All Faculty" addLabel="Add Faculty" onAdd={() => {}} />
-    </div>
+
+      <FacultyForm 
+        open={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleSubmitFaculty}
+        mode="add"
+      />
+    </>
   );
 }
