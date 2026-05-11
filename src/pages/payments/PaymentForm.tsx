@@ -87,19 +87,13 @@ const paymentMethods = [
 
 const paymentTypes = [
   "Tuition",
-  "Registration Fee",
-  "Library Fee",
-  "Lab Fee",
-  "Sports Fee",
-  "Hostel Fee",
-  "Transport Fee",
-  "Exam Fee",
-  "Late Fee",
-  "Scholarship",
-  "Refund"
+  "Library",
+  "Lab",
+  "Hostel",
+  "Other"
 ];
 
-const statusOptions = ["Completed", "Pending", "Processing", "Failed", "Refunded"];
+const statusOptions = ["Pending", "Completed", "Failed", "Refunded"];
 const semesterOptions = ["Fall", "Spring", "Summer", "Winter"];
 const yearOptions = [2022, 2023, 2024, 2025, 2026];
 

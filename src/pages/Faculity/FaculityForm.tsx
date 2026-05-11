@@ -23,9 +23,6 @@ import { DepartmentDto } from "@/services/departmentService";
 
 export interface FacultyFormData {
   facultyId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
   phoneNumber: string;
   dateOfBirth: string;
   hireDate: string;
@@ -52,9 +49,6 @@ interface FacultyFormProps {
 
 const defaultFormData: FacultyFormData = {
   facultyId: "",
-  firstName: "",
-  lastName: "",
-  email: "",
   phoneNumber: "",
   dateOfBirth: "",
   hireDate: new Date().toISOString().split('T')[0],
@@ -71,15 +65,10 @@ const defaultFormData: FacultyFormData = {
 };
 
 const designationOptions = [
-  "Professor",
-  "Associate Professor",
-  "Assistant Professor",
-  "Senior Lecturer",
-  "Lecturer",
-  "Visiting Faculty",
-  "Research Scholar",
-  "Department Head",
-  "Dean"
+  { value: "Professor", label: "Professor" },
+  { value: "AssociateProfessor", label: "Associate Professor" },
+  { value: "AssistantProfessor", label: "Assistant Professor" },
+  { value: "Lecturer", label: "Lecturer" },
 ];
 
 const statusOptions = ["Active", "Inactive", "On Leave", "Retired"];
@@ -105,12 +94,6 @@ export function FacultyForm({ open, onClose, onSubmit, initialData, mode = "add"
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof FacultyFormData, string>> = {};
 
-    if (!formData.firstName?.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName?.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email?.trim()) newErrors.email = "Email is required";
-    if (!formData.email?.includes("@") || !formData.email?.includes(".")) {
-      newErrors.email = "Invalid email format";
-    }
     if (!formData.facultyId?.trim()) newErrors.facultyId = "Faculty ID is required";
     if (!formData.departmentId) newErrors.departmentId = "Department is required";
     if (!formData.designation) newErrors.designation = "Designation is required";
@@ -125,12 +108,7 @@ export function FacultyForm({ open, onClose, onSubmit, initialData, mode = "add"
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // Remove "Dr." prefix if present for consistent storage
-      const cleanedData = {
-        ...formData,
-        firstName: formData.firstName.replace(/^Dr\.\s*/, ''),
-      };
-      onSubmit(cleanedData);
+      onSubmit(formData);
       onClose();
     }
   };
@@ -170,44 +148,6 @@ export function FacultyForm({ open, onClose, onSubmit, initialData, mode = "add"
                     className={errors.facultyId ? "border-red-500" : ""}
                   />
                   {errors.facultyId && <p className="text-xs text-red-500">{errors.facultyId}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    placeholder="Maria (without Dr./Prof. prefix)"
-                    className={errors.firstName ? "border-red-500" : ""}
-                  />
-                  {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
-                  <p className="text-xs text-muted-foreground">Don't include titles like Dr. - they'll be added automatically</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    placeholder="Garcia"
-                    className={errors.lastName ? "border-red-500" : ""}
-                  />
-                  {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="m.garcia@university.edu"
-                    className={errors.email ? "border-red-500" : ""}
-                  />
-                  {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -267,7 +207,7 @@ export function FacultyForm({ open, onClose, onSubmit, initialData, mode = "add"
                     </SelectTrigger>
                     <SelectContent>
                       {designationOptions.map(option => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

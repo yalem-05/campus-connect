@@ -5,15 +5,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentService, StudentDto } from "@/services/studentService";
 import { departmentService, DepartmentDto } from "@/services/departmentService";
 import { StudentForm } from "./StudentC/StudentForm";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 
 interface StudentFormData {
   studentId: string;
-  firstName: string;
-  lastName: string;
   dateOfBirth: string;
   gender: string;
-  email: string;
   phoneNumber?: string;
   address?: string;
   city?: string;
@@ -62,6 +60,7 @@ const columns = (departments: DepartmentDto[]) => [
 ];
 
 export default function Students() {
+  const { user } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -88,11 +87,8 @@ export default function Students() {
   const handleSubmit = (data: StudentFormData) => {
     createMutation.mutate({
       studentId: data.studentId,
-      firstName: data.firstName,
-      lastName: data.lastName,
       dateOfBirth: data.dateOfBirth,
       gender: data.gender,
-      email: data.email,
       phoneNumber: data.phoneNumber || undefined,
       address: data.address || undefined,
       city: data.city || undefined,

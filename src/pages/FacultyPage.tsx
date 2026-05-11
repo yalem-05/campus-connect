@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { facultyService, FacultyDto } from "@/services/facultyService";
 import { departmentService, DepartmentDto } from "@/services/departmentService";
 import { FacultyForm, FacultyFormData } from "./Faculity/FaculityForm";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 
 const columns = (departments: DepartmentDto[]) => [
@@ -44,6 +45,7 @@ const columns = (departments: DepartmentDto[]) => [
 ];
 
 export default function FacultyPage() {
+  const { user } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -70,9 +72,6 @@ export default function FacultyPage() {
   const handleSubmit = (data: FacultyFormData) => {
     createMutation.mutate({
       facultyId: data.facultyId,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
       phoneNumber: data.phoneNumber || undefined,
       dateOfBirth: data.dateOfBirth,
       designation: data.designation,

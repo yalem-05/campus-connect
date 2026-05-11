@@ -22,11 +22,8 @@ import { DepartmentDto } from "@/services/departmentService";
 
 interface StudentFormData {
   studentId: string;
-  firstName: string;
-  lastName: string;
   dateOfBirth: string;
   gender: string;
-  email: string;
   phoneNumber: string;
   address: string;
   city: string;
@@ -51,11 +48,8 @@ interface StudentFormProps {
 
 const defaultFormData: StudentFormData = {
   studentId: "",
-  firstName: "",
-  lastName: "",
   dateOfBirth: "",
   gender: "",
-  email: "",
   phoneNumber: "",
   address: "",
   city: "",
@@ -84,10 +78,6 @@ export function StudentForm({ open, onClose, onSubmit, initialData, mode = "add"
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof StudentFormData, string>> = {};
 
-    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.email.includes("@")) newErrors.email = "Invalid email format";
     if (!formData.studentId.trim()) newErrors.studentId = "Student ID is required";
     if (!formData.departmentId) newErrors.departmentId = "Department is required";
 
@@ -141,30 +131,6 @@ export function StudentForm({ open, onClose, onSubmit, initialData, mode = "add"
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    placeholder="James"
-                    className={errors.firstName ? "border-red-500" : ""}
-                  />
-                  {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    placeholder="Wilson"
-                    className={errors.lastName ? "border-red-500" : ""}
-                  />
-                  {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
                   <Select value={formData.gender} onValueChange={(v) => handleChange("gender", v)}>
                     <SelectTrigger>
@@ -186,19 +152,6 @@ export function StudentForm({ open, onClose, onSubmit, initialData, mode = "add"
                     value={formData.dateOfBirth}
                     onChange={(e) => handleChange("dateOfBirth", e.target.value)}
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    placeholder="student@example.com"
-                    className={errors.email ? "border-red-500" : ""}
-                  />
-                  {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
