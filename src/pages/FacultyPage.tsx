@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { facultyService, FacultyDto } from "@/services/facultyService";
 import { departmentService, DepartmentDto } from "@/services/departmentService";
+import { FacultyForm, FacultyFormData } from "./Faculity/FaculityForm";
+import { toast } from "@/components/ui/use-toast";
 
 const columns = (departments: DepartmentDto[]) => [
   { key: "facultyId", label: "ID" },
@@ -41,7 +44,10 @@ const columns = (departments: DepartmentDto[]) => [
 ];
 
 export default function FacultyPage() {
-  const { data: faculty = [], isLoading } = useQuery({
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: facultyList = [], isLoading } = useQuery({
     queryKey: ["faculty"],
     queryFn: facultyService.getAll,
   });
@@ -50,15 +56,46 @@ export default function FacultyPage() {
     queryFn: departmentService.getAll,
   });
 
+  const createMutation = useMutation({
+    mutationFn: facultyService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["faculty"] });
+      toast({ title: "Faculty Member Added", description: "The faculty member has been added successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add faculty member.", variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (data: FacultyFormData) => {
+    createMutation.mutate({
+      facultyId: data.facultyId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phoneNumber: data.phoneNumber || undefined,
+      dateOfBirth: data.dateOfBirth,
+      designation: data.designation,
+      qualification: data.qualification || undefined,
+      specialization: data.specialization || undefined,
+      salary: data.salary,
+      departmentId: data.departmentId || undefined,
+    });
+    setIsFormOpen(false);
+  };
+
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading faculty...</div>;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Faculty</h1>
-        <p className="text-sm text-muted-foreground">Manage faculty members and assignments.</p>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Faculty</h1>
+          <p className="text-sm text-muted-foreground">Manage faculty members and assignments.</p>
+        </div>
+        <DataTable data={facultyList} columns={columns(departments)} searchKey="lastName" title="All Faculty" addLabel="Add Faculty" onAdd={() => setIsFormOpen(true)} />
       </div>
-      <DataTable data={faculty} columns={columns(departments)} searchKey="lastName" title="All Faculty" addLabel="Add Faculty" onAdd={() => {}} />
-    </div>
+      <FacultyForm open={isFormOpen} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} mode="add" departments={departments} />
+    </>
   );
 }

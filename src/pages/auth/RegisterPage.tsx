@@ -99,16 +99,14 @@ export default function RegisterPage() {
       });
       toast({
         title: "Account created!",
-        description: "Welcome to the School Management System.",
+        description: "Please sign in to continue.",
         variant: "default",
       });
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const role = user.role?.toLowerCase() || "student";
-      navigate(`/${role}`, { replace: true });
+      navigate("/login", { replace: true });
     } catch (error) {
       toast({
         title: "Registration failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: error instanceof Error ? error.message+ "gdhjgjh" : "Something went wrong",
         variant: "destructive",
       });
     } finally {

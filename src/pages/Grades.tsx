@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { gradeService, GradeDto } from "@/services/gradeService";
+import { studentService, StudentDto } from "@/services/studentService";
+import { courseService, CourseDto } from "@/services/courseService";
+import { enrollmentService, EnrollmentDto } from "@/services/enrollmentService";
+import { GradeForm, GradeFormData } from "./Grade/GradeForm";
+import { toast } from "@/components/ui/use-toast";
 
 const columns = [
   { key: "id", label: "ID" },
@@ -32,20 +38,62 @@ const columns = [
 ];
 
 export default function Grades() {
-  const { data: grades = [], isLoading } = useQuery({
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: gradesList = [], isLoading } = useQuery({
     queryKey: ["grades"],
     queryFn: gradeService.getAll,
   });
+  const { data: students = [] } = useQuery({
+    queryKey: ["students"],
+    queryFn: studentService.getAll,
+  });
+  const { data: courses = [] } = useQuery({
+    queryKey: ["courses"],
+    queryFn: courseService.getAll,
+  });
+  const { data: enrollments = [] } = useQuery({
+    queryKey: ["enrollments"],
+    queryFn: enrollmentService.getAll,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: gradeService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["grades"] });
+      toast({ title: "Grade Recorded", description: "The grade has been recorded successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to record grade.", variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (data: GradeFormData) => {
+    createMutation.mutate({
+      studentId: data.studentId,
+      courseId: data.courseId,
+      semester: data.semester,
+      academicYear: data.academicYear,
+      marksObtained: data.marksObtained,
+      totalMarks: data.totalMarks || 100,
+      remarks: data.remarks || undefined,
+    });
+    setIsFormOpen(false);
+  };
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading grades...</div>;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Grades</h1>
-        <p className="text-sm text-muted-foreground">View and manage student grades.</p>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Grades</h1>
+          <p className="text-sm text-muted-foreground">View and manage student grades.</p>
+        </div>
+        <DataTable data={gradesList} columns={columns} searchKey="gradeLetter" title="All Grades" addLabel="Add Grade" onAdd={() => setIsFormOpen(true)} />
       </div>
-      <DataTable data={grades} columns={columns} searchKey="studentName" title="All Grades" addLabel="Add Grade" onAdd={() => {}} />
-    </div>
+      <GradeForm open={isFormOpen} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} mode="add" students={students} courses={courses} enrollments={enrollments} />
+    </>
   );
 }

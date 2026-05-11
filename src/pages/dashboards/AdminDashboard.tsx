@@ -7,7 +7,7 @@ import { studentService, StudentDto } from "@/services/studentService";
 import { departmentService, DepartmentDto } from "@/services/departmentService";
 import { courseService, CourseDto } from "@/services/courseService";
 import { announcementService, AnnouncementDto } from "@/services/announcementService";
-import { paymentService } from "@/services/paymentService";
+import { paymentService, PaymentDto } from "@/services/paymentService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Button } from "@/components/ui/button";
 
@@ -29,8 +29,8 @@ export default function AdminDashboard() {
   const { data: payments = [] } = useQuery({ queryKey: ["payments"], queryFn: paymentService.getAll });
 
   const activeStudents = students.filter((s: StudentDto) => s.enrollmentStatus === "Active" || s.enrollmentStatus === "Enrolled").length;
-  const totalRevenue = payments.reduce((sum: number, p: any) => p.status === "Completed" ? sum + p.amount : sum, 0);
-  const pendingPayments = payments.filter((p: any) => p.status === "Pending").length;
+  const totalRevenue = payments.reduce((sum: number, p: PaymentDto) => p.status === "Completed" ? sum + p.amount : sum, 0);
+  const pendingPayments = payments.filter((p: PaymentDto) => p.status === "Pending").length;
 
   const enrollmentTrends = [
     { month: "Jan", enrollments: 45 }, { month: "Feb", enrollments: 52 },
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={departmentDistribution} dataKey="students" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`} labelLine={false}>
-                {departmentDistribution.map((_: any, i: number) => (
+                {departmentDistribution.map((_, i: number) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                 ))}
               </Pie>

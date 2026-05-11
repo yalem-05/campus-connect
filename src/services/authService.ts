@@ -37,17 +37,17 @@ export interface LoginResponseDto {
 
 export const authService = {
   login: async (data: LoginDto) => {
-    const res = await api.post<LoginResponseDto>("/auth/login", data);
+    const res = await api.post<LoginResponseDto>("/Auth/login", data);
     return res.data;
   },
 
   register: async (data: RegisterDto) => {
-    const res = await api.post<UserDto>("/auth/register", data);
+    const res = await api.post<UserDto>("/Auth/register", data);
     return res.data;
   },
 
   getProfile: async () => {
-    const res = await api.get<UserDto>("/auth/profile");
+    const res = await api.get<UserDto>("/Auth/profile");
     return res.data;
   },
 };

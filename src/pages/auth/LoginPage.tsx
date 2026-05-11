@@ -46,8 +46,8 @@ export default function LoginPage() {
         description: "You have successfully logged in.",
         variant: "default",
       });
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const role = user.role?.toLowerCase() || "admin";
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const role = currentUser.role?.toLowerCase() || "admin";
       navigate(`/${role}`, { replace: true });
     } catch (error) {
       toast({

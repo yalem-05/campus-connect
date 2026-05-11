@@ -1,10 +1,10 @@
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { studentService } from "@/services/studentService";
-import { departmentService } from "@/services/departmentService";
-import { courseService } from "@/services/courseService";
-import { announcementService } from "@/services/announcementService";
-import { paymentService } from "@/services/paymentService";
+import { studentService, StudentDto } from "@/services/studentService";
+import { departmentService, DepartmentDto } from "@/services/departmentService";
+import { courseService, CourseDto } from "@/services/courseService";
+import { announcementService, AnnouncementDto } from "@/services/announcementService";
+import { paymentService, PaymentDto } from "@/services/paymentService";
 import { GraduationCap, Users, BookOpen, DollarSign } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -12,6 +12,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Building2, TrendingUp, AlertCircle } from "lucide-react";
 
 const CHART_COLORS = ["hsl(210, 75%, 42%)", "hsl(165, 60%, 40%)", "hsl(38, 92%, 50%)", "hsl(280, 60%, 55%)", "hsl(0, 72%, 55%)"];
+
+type DeptDistItem = { name: string; students: number };
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -22,10 +24,10 @@ export default function Dashboard() {
   const { data: announcements = [] } = useQuery({ queryKey: ["announcements"], queryFn: announcementService.getAll });
   const { data: payments = [] } = useQuery({ queryKey: ["payments"], queryFn: paymentService.getAll });
 
-  const activeStudents = students.filter((s: any) => s.enrollmentStatus === "Active" || s.enrollmentStatus === "Enrolled").length;
-  const totalRevenue = payments.reduce((sum: number, p: any) => p.status === "Completed" ? sum + p.amount : sum, 0);
-  const pendingPayments = payments.filter((p: any) => p.status === "Pending").length;
-  const departmentDistribution = departments.map((d: any) => ({ name: d.departmentName, students: d.studentCount }));
+  const activeStudents = students.filter((s: StudentDto) => s.enrollmentStatus === "Active" || s.enrollmentStatus === "Enrolled").length;
+  const totalRevenue = payments.reduce((sum: number, p: PaymentDto) => p.status === "Completed" ? sum + p.amount : sum, 0);
+  const pendingPayments = payments.filter((p: PaymentDto) => p.status === "Pending").length;
+  const departmentDistribution: DeptDistItem[] = departments.map((d: DepartmentDto) => ({ name: d.departmentName, students: d.studentCount }));
 
   const enrollmentTrends = [
     { month: "Jan", enrollments: 45 }, { month: "Feb", enrollments: 52 },
@@ -35,7 +37,7 @@ export default function Dashboard() {
 
   const stats = [
     { title: "Total Students", value: students.length, subtitle: `${activeStudents} active`, icon: GraduationCap, variant: "primary" as const },
-    { title: "Active Courses", value: courses.filter((c: any) => c.isActive).length, subtitle: `${courses.length} total`, icon: BookOpen, variant: "warning" as const },
+    { title: "Active Courses", value: courses.filter((c: CourseDto) => c.isActive).length, subtitle: `${courses.length} total`, icon: BookOpen, variant: "warning" as const },
     { title: "Departments", value: departments.length, subtitle: "All departments", icon: Building2, variant: "accent" as const },
     { title: "Revenue", value: `$${totalRevenue.toLocaleString()}`, subtitle: `${pendingPayments} pending`, icon: DollarSign, variant: "default" as const },
   ];
@@ -78,7 +80,7 @@ export default function Dashboard() {
             <PieChart>
               <Pie data={departmentDistribution} dataKey="students" nameKey="name" cx="50%" cy="50%" outerRadius={75}
                 label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`} labelLine={false}>
-                {departmentDistribution.map((_: any, i: number) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}
+                {departmentDistribution.map((_, i: number) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}
               </Pie>
               <Tooltip />
             </PieChart>
@@ -96,7 +98,7 @@ export default function Dashboard() {
             <span className="text-xs text-muted-foreground">{students.length} total</span>
           </div>
           <div className="space-y-3">
-            {recentStudents.map((s: any) => (
+            {recentStudents.map((s: StudentDto) => (
               <div key={s.id} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2.5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
@@ -118,7 +120,7 @@ export default function Dashboard() {
             <h3 className="font-semibold">Latest Announcements</h3>
           </div>
           <div className="space-y-3">
-            {announcements.slice(0, 4).map((a: any) => (
+            {announcements.slice(0, 4).map((a: AnnouncementDto) => (
               <div key={a.id} className="rounded-lg border border-border/50 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
