@@ -1,44 +1,49 @@
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { payments, students } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { paymentService, PaymentDto } from "@/services/paymentService";
 
 const columns = [
-  { key: "paymentId", label: "Payment ID" },
+  { key: "paymentId", label: "Receipt" },
   {
-    key: "student",
+    key: "studentName",
     label: "Student",
-    render: (p: typeof payments[0]) => {
-      const s = students.find(st => st.id === p.studentId);
-      return s ? `${s.firstName} ${s.lastName}` : "—";
-    },
+    render: (p: PaymentDto) => p.studentName || `Student #${p.studentId}`,
   },
   {
     key: "amount",
     label: "Amount",
-    render: (p: typeof payments[0]) => <span className="font-semibold">${p.amount.toLocaleString()}</span>,
+    render: (p: PaymentDto) => `$${p.amount.toLocaleString()}`,
   },
-  { key: "paymentMethod", label: "Method" },
   { key: "paymentType", label: "Type" },
+  { key: "paymentMethod", label: "Method" },
   {
     key: "paymentDate",
     label: "Date",
-    render: (p: typeof payments[0]) => new Date(p.paymentDate).toLocaleDateString(),
+    render: (p: PaymentDto) => new Date(p.paymentDate).toLocaleDateString(),
   },
   {
     key: "status",
     label: "Status",
-    render: (p: typeof payments[0]) => <StatusBadge status={p.status} />,
+    render: (p: PaymentDto) => <StatusBadge status={p.status} />,
   },
 ];
 
 export default function Payments() {
+  const { data: payments = [], isLoading } = useQuery({
+    queryKey: ["payments"],
+    queryFn: paymentService.getAll,
+  });
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading payments...</div>;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Payments</h1>
-        <p className="text-sm text-muted-foreground">Track tuition fees and payment records.</p>
+        <p className="text-sm text-muted-foreground">Manage student payments and fees.</p>
       </div>
-      <DataTable data={payments} columns={columns} searchKey="paymentId" title="All Payments" addLabel="Record Payment" onAdd={() => {}} />
+      <DataTable data={payments} columns={columns} searchKey="studentName" title="All Payments" addLabel="Add Payment" onAdd={() => {}} />
     </div>
   );
 }

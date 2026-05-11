@@ -2,7 +2,12 @@ import { useAuth } from "@/context/AuthContext";
 import { GraduationCap, Users, BookOpen, DollarSign, ClipboardList, Building2, TrendingUp, AlertCircle, Settings, Shield, Calendar } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { dashboardStats, enrollmentTrends, departmentDistribution, announcements, students } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { studentService, StudentDto } from "@/services/studentService";
+import { departmentService, DepartmentDto } from "@/services/departmentService";
+import { courseService, CourseDto } from "@/services/courseService";
+import { announcementService, AnnouncementDto } from "@/services/announcementService";
+import { paymentService } from "@/services/paymentService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Button } from "@/components/ui/button";
 
@@ -17,11 +22,29 @@ const CHART_COLORS = [
 export default function AdminDashboard() {
   const { user } = useAuth();
 
+  const { data: students = [] } = useQuery({ queryKey: ["students"], queryFn: studentService.getAll });
+  const { data: departments = [] } = useQuery({ queryKey: ["departments"], queryFn: departmentService.getAll });
+  const { data: courses = [] } = useQuery({ queryKey: ["courses"], queryFn: courseService.getAll });
+  const { data: announcements = [] } = useQuery({ queryKey: ["announcements"], queryFn: announcementService.getAll });
+  const { data: payments = [] } = useQuery({ queryKey: ["payments"], queryFn: paymentService.getAll });
+
+  const activeStudents = students.filter((s: StudentDto) => s.enrollmentStatus === "Active" || s.enrollmentStatus === "Enrolled").length;
+  const totalRevenue = payments.reduce((sum: number, p: any) => p.status === "Completed" ? sum + p.amount : sum, 0);
+  const pendingPayments = payments.filter((p: any) => p.status === "Pending").length;
+
+  const enrollmentTrends = [
+    { month: "Jan", enrollments: 45 }, { month: "Feb", enrollments: 52 },
+    { month: "Mar", enrollments: 38 }, { month: "Apr", enrollments: 60 },
+    { month: "May", enrollments: 55 }, { month: "Jun", enrollments: 70 },
+  ];
+
+  const departmentDistribution = departments.map((d: DepartmentDto) => ({ name: d.departmentName, students: d.studentCount }));
+
   const stats = [
-    { title: "Total Students", value: dashboardStats.totalStudents, subtitle: `${dashboardStats.activeStudents} active`, icon: GraduationCap, variant: "primary" as const, trend: { value: 12, positive: true } },
-    { title: "Faculty Members", value: dashboardStats.totalFaculty, subtitle: "All departments", icon: Users, variant: "accent" as const },
-    { title: "Active Courses", value: dashboardStats.activeCourses, subtitle: `${dashboardStats.totalCourses} total`, icon: BookOpen, variant: "warning" as const },
-    { title: "Revenue", value: `$${dashboardStats.totalRevenue.toLocaleString()}`, subtitle: `${dashboardStats.pendingPayments} pending`, icon: DollarSign, variant: "default" as const, trend: { value: 8, positive: true } },
+    { title: "Total Students", value: students.length, subtitle: `${activeStudents} active`, icon: GraduationCap, variant: "primary" as const, trend: { value: 12, positive: true } },
+    { title: "Faculty Members", value: departments.reduce((s: number, d: DepartmentDto) => s + d.facultyCount, 0), subtitle: "All departments", icon: Users, variant: "accent" as const },
+    { title: "Active Courses", value: courses.filter((c: CourseDto) => c.isActive).length, subtitle: `${courses.length} total`, icon: BookOpen, variant: "warning" as const },
+    { title: "Revenue", value: `$${totalRevenue.toLocaleString()}`, subtitle: `${pendingPayments} pending`, icon: DollarSign, variant: "default" as const, trend: { value: 8, positive: true } },
   ];
 
   const recentStudents = students.slice(-5).reverse();
@@ -75,8 +98,8 @@ export default function AdminDashboard() {
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie data={departmentDistribution} dataKey="students" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
-                {departmentDistribution.map((_, i) => (
+              <Pie data={departmentDistribution} dataKey="students" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`} labelLine={false}>
+                {departmentDistribution.map((_: any, i: number) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                 ))}
               </Pie>
@@ -96,7 +119,7 @@ export default function AdminDashboard() {
             <span className="text-xs text-muted-foreground">{students.length} total</span>
           </div>
           <div className="space-y-3">
-            {recentStudents.map((s) => (
+            {recentStudents.map((s: StudentDto) => (
               <div key={s.id} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2.5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
@@ -119,7 +142,7 @@ export default function AdminDashboard() {
             <h3 className="font-semibold">Latest Announcements</h3>
           </div>
           <div className="space-y-3">
-            {announcements.slice(0, 4).map((a) => (
+            {announcements.slice(0, 4).map((a: AnnouncementDto) => (
               <div key={a.id} className="rounded-lg border border-border/50 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>

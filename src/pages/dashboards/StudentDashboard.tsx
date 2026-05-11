@@ -2,28 +2,26 @@ import { useAuth } from "@/context/AuthContext";
 import { BookOpen, GraduationCap, Calendar, DollarSign, Clock, Award, TrendingUp, AlertCircle } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { courses as allCourses, enrollments, grades, announcements, students } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { courseService, CourseDto } from "@/services/courseService";
+import { announcementService, AnnouncementDto } from "@/services/announcementService";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  
-  const studentCourses = allCourses.slice(0, 5);
-  const studentGrades = grades.slice(0, 3);
-  const upcomingAnnouncements = announcements.filter(a => a.targetAudience === "Students" || a.targetAudience === "All").slice(0, 3);
+
+  const { data: courses = [] } = useQuery({ queryKey: ["courses"], queryFn: courseService.getAll });
+  const { data: announcements = [] } = useQuery({ queryKey: ["announcements"], queryFn: announcementService.getAll });
+
+  const studentCourses = courses.slice(0, 5);
+  const upcomingAnnouncements = (announcements as AnnouncementDto[]).filter(a => a.targetAudience === "Students" || a.targetAudience === "All").slice(0, 3);
 
   const stats = [
     { title: "Enrolled Courses", value: studentCourses.length, subtitle: "This semester", icon: BookOpen, variant: "primary" as const },
     { title: "Attendance", value: "92%", subtitle: "Above average", icon: Calendar, variant: "accent" as const },
     { title: "GPA", value: "3.75", subtitle: "Dean's List", icon: Award, variant: "warning" as const },
     { title: "Credits", value: "45/120", subtitle: "60% complete", icon: GraduationCap, variant: "default" as const },
-  ];
-
-  const gradeData = [
-    { course: "Data Structures", grade: "A", marks: 92 },
-    { course: "Database Systems", grade: "B+", marks: 87 },
-    { course: "Web Development", grade: "A-", marks: 89 },
   ];
 
   return (
@@ -61,7 +59,7 @@ export default function StudentDashboard() {
             <span className="text-xs text-muted-foreground">{studentCourses.length} enrolled</span>
           </div>
           <div className="space-y-4">
-            {studentCourses.map((course) => (
+            {studentCourses.map((course: CourseDto) => (
               <div key={course.id} className="rounded-lg bg-muted/30 p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
@@ -83,14 +81,14 @@ export default function StudentDashboard() {
             <h3 className="font-semibold">Recent Grades</h3>
           </div>
           <div className="space-y-3">
-            {gradeData.map((g, i) => (
+            {studentCourses.slice(0, 3).map((course: CourseDto, i: number) => (
               <div key={i} className="flex items-center justify-between rounded-lg border border-border/50 p-3">
                 <div>
-                  <p className="text-sm font-medium">{g.course}</p>
-                  <p className="text-xs text-muted-foreground">{g.marks}/100 marks</p>
+                  <p className="text-sm font-medium">{course.courseName}</p>
+                  <p className="text-xs text-muted-foreground">In progress</p>
                 </div>
                 <div className="text-center">
-                  <span className="text-lg font-bold text-primary">{g.grade}</span>
+                  <span className="text-lg font-bold text-primary">—</span>
                   <p className="text-xs text-muted-foreground">Grade</p>
                 </div>
               </div>
@@ -108,17 +106,10 @@ export default function StudentDashboard() {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950">
               <div>
-                <p className="text-sm font-medium">Fall 2024 Tuition</p>
-                <p className="text-xs text-muted-foreground">Paid</p>
+                <p className="text-sm font-medium">Current Semester</p>
+                <p className="text-xs text-muted-foreground">All fees paid</p>
               </div>
-              <StatusBadge status="Completed" />
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-              <div>
-                <p className="text-sm font-medium">Spring 2025</p>
-                <p className="text-xs text-muted-foreground">Due: Jan 15, 2025</p>
-              </div>
-              <StatusBadge status="Pending" />
+              <span className="text-xs font-medium text-green-600">Clear</span>
             </div>
           </div>
         </div>
@@ -129,7 +120,7 @@ export default function StudentDashboard() {
             <h3 className="font-semibold">Announcements</h3>
           </div>
           <div className="space-y-3">
-            {upcomingAnnouncements.map((a) => (
+            {upcomingAnnouncements.map((a: AnnouncementDto) => (
               <div key={a.id} className="rounded-lg border border-border/50 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>

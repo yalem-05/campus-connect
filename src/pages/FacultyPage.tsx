@@ -1,17 +1,19 @@
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { faculty, departments } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { facultyService, FacultyDto } from "@/services/facultyService";
+import { departmentService, DepartmentDto } from "@/services/departmentService";
 
-const columns = [
+const columns = (departments: DepartmentDto[]) => [
   { key: "facultyId", label: "ID" },
   {
     key: "name",
     label: "Name",
-    render: (f: typeof faculty[0]) => (
+    render: (f: FacultyDto) => (
       <div className="flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">
-          {f.firstName.replace("Dr. ", "")[0]}{f.lastName[0]}
+          {f.firstName[0]}{f.lastName[0]}
         </div>
         <div>
           <p className="font-medium">{f.firstName} {f.lastName}</p>
@@ -23,29 +25,40 @@ const columns = [
   {
     key: "department",
     label: "Department",
-    render: (f: typeof faculty[0]) => departments.find(d => d.id === f.departmentId)?.departmentName || "—",
+    render: (f: FacultyDto) => departments.find(d => d.id === f.departmentId)?.departmentName || "—",
   },
   {
     key: "designation",
     label: "Designation",
-    render: (f: typeof faculty[0]) => <Badge variant="outline" className="text-[11px]">{f.designation}</Badge>,
+    render: (f: FacultyDto) => <Badge variant="outline" className="text-[11px]">{f.designation}</Badge>,
   },
   { key: "specialization", label: "Specialization" },
   {
     key: "status",
     label: "Status",
-    render: (f: typeof faculty[0]) => <StatusBadge status={f.status} />,
+    render: (f: FacultyDto) => <StatusBadge status={f.status} />,
   },
 ];
 
 export default function FacultyPage() {
+  const { data: faculty = [], isLoading } = useQuery({
+    queryKey: ["faculty"],
+    queryFn: facultyService.getAll,
+  });
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: departmentService.getAll,
+  });
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading faculty...</div>;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Faculty</h1>
         <p className="text-sm text-muted-foreground">Manage faculty members and assignments.</p>
       </div>
-      <DataTable data={faculty} columns={columns} searchKey="lastName" title="All Faculty" addLabel="Add Faculty" onAdd={() => {}} />
+      <DataTable data={faculty} columns={columns(departments)} searchKey="lastName" title="All Faculty" addLabel="Add Faculty" onAdd={() => {}} />
     </div>
   );
 }

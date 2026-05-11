@@ -1,13 +1,15 @@
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { students, departments } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { studentService, StudentDto } from "@/services/studentService";
+import { departmentService, DepartmentDto } from "@/services/departmentService";
 
-const columns = [
+const columns = (departments: DepartmentDto[]) => [
   { key: "studentId", label: "ID" },
   {
     key: "name",
     label: "Name",
-    render: (s: typeof students[0]) => (
+    render: (s: StudentDto) => (
       <div className="flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
           {s.firstName[0]}{s.lastName[0]}
@@ -22,28 +24,39 @@ const columns = [
   {
     key: "department",
     label: "Department",
-    render: (s: typeof students[0]) => departments.find(d => d.id === s.departmentId)?.departmentName || "—",
+    render: (s: StudentDto) => departments.find(d => d.id === s.departmentId)?.departmentName || "—",
   },
   {
     key: "enrollmentDate",
     label: "Enrolled",
-    render: (s: typeof students[0]) => new Date(s.enrollmentDate).toLocaleDateString(),
+    render: (s: StudentDto) => new Date(s.enrollmentDate).toLocaleDateString(),
   },
   {
     key: "enrollmentStatus",
     label: "Status",
-    render: (s: typeof students[0]) => <StatusBadge status={s.enrollmentStatus} />,
+    render: (s: StudentDto) => <StatusBadge status={s.enrollmentStatus} />,
   },
 ];
 
 export default function Students() {
+  const { data: students = [], isLoading: studentsLoading } = useQuery({
+    queryKey: ["students"],
+    queryFn: studentService.getAll,
+  });
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: departmentService.getAll,
+  });
+
+  if (studentsLoading) return <div className="p-6 text-muted-foreground">Loading students...</div>;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Students</h1>
         <p className="text-sm text-muted-foreground">Manage student records and enrollments.</p>
       </div>
-      <DataTable data={students} columns={columns} searchKey="firstName" title="All Students" addLabel="Add Student" onAdd={() => {}} />
+      <DataTable data={students} columns={columns(departments)} searchKey="firstName" title="All Students" addLabel="Add Student" onAdd={() => {}} />
     </div>
   );
 }

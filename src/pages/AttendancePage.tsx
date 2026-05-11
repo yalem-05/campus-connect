@@ -1,21 +1,47 @@
-import { CalendarCheck } from "lucide-react";
+import { DataTable } from "@/components/shared/DataTable";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { useQuery } from "@tanstack/react-query";
+import { attendanceService, AttendanceDto } from "@/services/attendanceService";
+
+const columns = [
+  { key: "id", label: "ID" },
+  {
+    key: "studentName",
+    label: "Student",
+    render: (a: AttendanceDto) => a.studentName || `Student #${a.studentId}`,
+  },
+  {
+    key: "courseName",
+    label: "Course",
+    render: (a: AttendanceDto) => a.courseName || `Schedule #${a.courseScheduleId}`,
+  },
+  {
+    key: "attendanceDate",
+    label: "Date",
+    render: (a: AttendanceDto) => new Date(a.attendanceDate).toLocaleDateString(),
+  },
+  {
+    key: "status",
+    label: "Status",
+    render: (a: AttendanceDto) => <StatusBadge status={a.status} />,
+  },
+];
 
 export default function AttendancePage() {
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: ["attendance"],
+    queryFn: attendanceService.getAll,
+  });
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading attendance...</div>;
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Attendance</h1>
         <p className="text-sm text-muted-foreground">Track and manage student attendance records.</p>
       </div>
-      <div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 shadow-card">
-        <div className="rounded-full bg-primary/10 p-4 mb-4">
-          <CalendarCheck className="h-8 w-8 text-primary" />
-        </div>
-        <h3 className="text-lg font-semibold">Attendance Tracking</h3>
-        <p className="mt-1 text-sm text-muted-foreground text-center max-w-md">
-          Attendance records will be displayed here. Connect to your backend API to start tracking attendance for course schedules.
-        </p>
-      </div>
+      <DataTable data={records} columns={columns} searchKey="studentName" title="Attendance Records" addLabel="Mark Attendance" onAdd={() => {}} />
     </div>
   );
 }

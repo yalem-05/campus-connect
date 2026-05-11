@@ -1,46 +1,49 @@
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { enrollments, students, courses } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { enrollmentService, EnrollmentDto } from "@/services/enrollmentService";
 
 const columns = [
+  { key: "id", label: "ID" },
   {
-    key: "student",
+    key: "studentName",
     label: "Student",
-    render: (e: typeof enrollments[0]) => {
-      const s = students.find(st => st.id === e.studentId);
-      return s ? `${s.firstName} ${s.lastName}` : "—";
-    },
+    render: (e: EnrollmentDto) => e.studentName || `Student #${e.studentId}`,
   },
   {
-    key: "course",
+    key: "courseName",
     label: "Course",
-    render: (e: typeof enrollments[0]) => {
-      const c = courses.find(co => co.id === e.courseId);
-      return c ? `${c.courseCode} - ${c.courseName}` : "—";
-    },
+    render: (e: EnrollmentDto) => e.courseName || `Course #${e.courseId}`,
   },
   { key: "semester", label: "Semester" },
   { key: "academicYear", label: "Year" },
   {
     key: "enrollmentDate",
-    label: "Date",
-    render: (e: typeof enrollments[0]) => new Date(e.enrollmentDate).toLocaleDateString(),
+    label: "Enrolled",
+    render: (e: EnrollmentDto) => new Date(e.enrollmentDate).toLocaleDateString(),
   },
   {
     key: "enrollmentStatus",
     label: "Status",
-    render: (e: typeof enrollments[0]) => <StatusBadge status={e.enrollmentStatus} />,
+    render: (e: EnrollmentDto) => <StatusBadge status={e.enrollmentStatus} />,
   },
 ];
 
 export default function Enrollments() {
+  const { data: enrollments = [], isLoading } = useQuery({
+    queryKey: ["enrollments"],
+    queryFn: enrollmentService.getAll,
+  });
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading enrollments...</div>;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Enrollments</h1>
-        <p className="text-sm text-muted-foreground">Track course enrollments and registrations.</p>
+        <p className="text-sm text-muted-foreground">Track student course enrollments.</p>
       </div>
-      <DataTable data={enrollments} columns={columns} searchKey="semester" title="All Enrollments" addLabel="New Enrollment" onAdd={() => {}} />
+      <DataTable data={enrollments} columns={columns} searchKey="studentName" title="All Enrollments" addLabel="Add Enrollment" onAdd={() => {}} />
     </div>
   );
 }
