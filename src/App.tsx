@@ -318,7 +318,6 @@ function AppRoutes() {
           <AppLayout><Enrollments /></AppLayout>
         </ProtectedRoute>
       } />
-
       {/* ===================== SHARED ROUTES ===================== */}
       <Route path="/" element={
         <ProtectedRoute allowedRoles={["Admin"] as UserRole[]}>
