@@ -19,11 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { students, courses, enrollments } from "@/data/mockData";
+import { StudentDto } from "@/services/studentService";
+import { CourseDto } from "@/services/courseService";
+import { EnrollmentDto } from "@/services/enrollmentService";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCapIcon, TrendingUpIcon, AlertCircleIcon } from "lucide-react";
 
-interface GradeFormData {
+export interface GradeFormData {
   studentId: number;
   courseId: number;
   semester: string;
@@ -46,6 +48,9 @@ interface GradeFormProps {
   onSubmit: (data: GradeFormData) => void;
   initialData?: Partial<GradeFormData>;
   mode?: "add" | "edit";
+  students: StudentDto[];
+  courses: CourseDto[];
+  enrollments: EnrollmentDto[];
 }
 
 const defaultFormData: GradeFormData = {
@@ -94,15 +99,15 @@ const getGradeColor = (gradeLetter: string): string => {
   return "bg-red-100 text-red-800 border-red-200";
 };
 
-export function GradeForm({ open, onClose, onSubmit, initialData, mode = "add" }: GradeFormProps) {
+export function GradeForm({ open, onClose, onSubmit, initialData, mode = "add", students, courses, enrollments }: GradeFormProps) {
   const [formData, setFormData] = useState<GradeFormData>({
     ...defaultFormData,
     ...initialData,
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof GradeFormData, string>>>({});
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentDto | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<CourseDto | null>(null);
   const [showWarning, setShowWarning] = useState(false);
 
   // Get enrolled students and courses

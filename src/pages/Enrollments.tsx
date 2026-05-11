@@ -1,72 +1,78 @@
-// Enrollments.tsx (updated)
 import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { enrollments, students, courses } from "@/data/mockData";
-import { EnrollmentForm } from "./Enrollment/EnrollmentForm";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { enrollmentService, EnrollmentDto } from "@/services/enrollmentService";
+import { studentService, StudentDto } from "@/services/studentService";
+import { courseService, CourseDto } from "@/services/courseService";
+import { EnrollmentForm, EnrollmentFormData } from "./Enrollment/EnrollmentForm";
 import { toast } from "@/components/ui/use-toast";
 
 const columns = [
+  { key: "id", label: "ID" },
   {
-    key: "student",
+    key: "studentName",
     label: "Student",
-    render: (e: typeof enrollments[0]) => {
-      const s = students.find(st => st.id === e.studentId);
-      return s ? `${s.firstName} ${s.lastName}` : "—";
-    },
+    render: (e: EnrollmentDto) => e.studentName || `Student #${e.studentId}`,
   },
   {
-    key: "course",
+    key: "courseName",
     label: "Course",
-    render: (e: typeof enrollments[0]) => {
-      const c = courses.find(co => co.id === e.courseId);
-      return c ? `${c.courseCode} - ${c.courseName}` : "—";
-    },
+    render: (e: EnrollmentDto) => e.courseName || `Course #${e.courseId}`,
   },
   { key: "semester", label: "Semester" },
   { key: "academicYear", label: "Year" },
   {
     key: "enrollmentDate",
-    label: "Date",
-    render: (e: typeof enrollments[0]) => new Date(e.enrollmentDate).toLocaleDateString(),
+    label: "Enrolled",
+    render: (e: EnrollmentDto) => new Date(e.enrollmentDate).toLocaleDateString(),
   },
   {
     key: "enrollmentStatus",
     label: "Status",
-    render: (e: typeof enrollments[0]) => <StatusBadge status={e.enrollmentStatus} />,
+    render: (e: EnrollmentDto) => <StatusBadge status={e.enrollmentStatus} />,
   },
 ];
 
 export default function Enrollments() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [enrollmentsList, setEnrollmentsList] = useState(enrollments);
+  const queryClient = useQueryClient();
 
-  const handleAddEnrollment = () => {
-    setIsFormOpen(true);
-  };
+  const { data: enrollmentsList = [], isLoading } = useQuery({
+    queryKey: ["enrollments"],
+    queryFn: enrollmentService.getAll,
+  });
+  const { data: students = [] } = useQuery({
+    queryKey: ["students"],
+    queryFn: studentService.getAll,
+  });
+  const { data: courses = [] } = useQuery({
+    queryKey: ["courses"],
+    queryFn: courseService.getAll,
+  });
 
-  const handleSubmitEnrollment = (data: any) => {
-    const newEnrollment = {
-      id: enrollmentsList.length + 1,
-      guid: `e${enrollmentsList.length + 1}`,
-      ...data,
-      createdDate: new Date().toISOString().split('T')[0],
-      isActive: true,
-    };
-    
-    setEnrollmentsList([...enrollmentsList, newEnrollment]);
-    
-    // Get student and course names for the toast message
-    const student = students.find(s => s.id === data.studentId);
-    const course = courses.find(c => c.id === data.courseId);
-    
-    toast({
-      title: "Enrollment Created",
-      description: `${student?.firstName} ${student?.lastName} enrolled in ${course?.courseName} for ${data.semester} ${data.academicYear}.`,
+  const createMutation = useMutation({
+    mutationFn: enrollmentService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast({ title: "Enrollment Created", description: "The enrollment has been created successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create enrollment.", variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (data: EnrollmentFormData) => {
+    createMutation.mutate({
+      studentId: data.studentId,
+      courseId: data.courseId,
+      semester: data.semester,
+      academicYear: data.academicYear,
     });
-    
     setIsFormOpen(false);
   };
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading enrollments...</div>;
 
   return (
     <>
@@ -75,22 +81,9 @@ export default function Enrollments() {
           <h1 className="text-2xl font-bold">Enrollments</h1>
           <p className="text-sm text-muted-foreground">Track course enrollments and registrations.</p>
         </div>
-        <DataTable 
-          data={enrollmentsList} 
-          columns={columns} 
-          searchKey="semester" 
-          title="All Enrollments" 
-          addLabel="New Enrollment" 
-          onAdd={handleAddEnrollment} 
-        />
+        <DataTable data={enrollmentsList} columns={columns} searchKey="semester" title="All Enrollments" addLabel="New Enrollment" onAdd={() => setIsFormOpen(true)} />
       </div>
-
-      <EnrollmentForm 
-        open={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmitEnrollment}
-        mode="add"
-      />
+      <EnrollmentForm open={isFormOpen} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} mode="add" students={students} courses={courses} />
     </>
   );
 }

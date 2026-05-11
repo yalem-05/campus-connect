@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Building2, Mail, Phone, UserIcon } from "lucide-react";
 
-interface DepartmentFormData {
+export interface DepartmentFormData {
   departmentCode: string;
   departmentName: string;
   description: string;

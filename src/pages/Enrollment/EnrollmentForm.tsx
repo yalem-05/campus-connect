@@ -19,11 +19,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { students, courses } from "@/data/mockData";
+import { StudentDto } from "@/services/studentService";
+import { CourseDto } from "@/services/courseService";
 import { CalendarIcon, UserIcon, BookOpenIcon, CreditCardIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-interface EnrollmentFormData {
+export interface EnrollmentFormData {
   studentId: number;
   courseId: number;
   semester: string;
@@ -42,6 +43,8 @@ interface EnrollmentFormProps {
   onSubmit: (data: EnrollmentFormData) => void;
   initialData?: Partial<EnrollmentFormData>;
   mode?: "add" | "edit";
+  students: StudentDto[];
+  courses: CourseDto[];
 }
 
 const defaultFormData: EnrollmentFormData = {
@@ -63,7 +66,7 @@ const statusOptions = ["Enrolled", "Dropped", "Completed", "Pending", "Waitliste
 const paymentStatusOptions = ["Paid", "Partial", "Pending", "Refunded"];
 const gradeOptions = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "F", "In Progress", "Withdrawn"];
 
-export function EnrollmentForm({ open, onClose, onSubmit, initialData, mode = "add" }: EnrollmentFormProps) {
+export function EnrollmentForm({ open, onClose, onSubmit, initialData, mode = "add", students, courses }: EnrollmentFormProps) {
   const [formData, setFormData] = useState<EnrollmentFormData>({
     ...defaultFormData,
     ...initialData,
@@ -71,9 +74,8 @@ export function EnrollmentForm({ open, onClose, onSubmit, initialData, mode = "a
 
   const [errors, setErrors] = useState<Partial<Record<keyof EnrollmentFormData, string>>>({});
   const [selectedCourseFee, setSelectedCourseFee] = useState<number>(0);
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [selectedCourse, setSelectedCourse] = useState<CourseDto | null>(null);
 
-  // Get available students and courses
   const availableStudents = students.filter(s => s.enrollmentStatus === "Active");
   const availableCourses = courses.filter(c => c.isActive);
 
@@ -288,7 +290,7 @@ export function EnrollmentForm({ open, onClose, onSubmit, initialData, mode = "a
                   <Label htmlFor="enrollmentStatus">Enrollment Status *</Label>
                   <Select 
                     value={formData.enrollmentStatus} 
-                    onValueChange={(v: any) => handleChange("enrollmentStatus", v)}
+                    onValueChange={(v: string) => handleChange("enrollmentStatus", v)}
                   >
                     <SelectTrigger className={errors.enrollmentStatus ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select status" />
@@ -323,7 +325,7 @@ export function EnrollmentForm({ open, onClose, onSubmit, initialData, mode = "a
                   <Label htmlFor="paymentStatus">Payment Status</Label>
                   <Select 
                     value={formData.paymentStatus} 
-                    onValueChange={(v: any) => handleChange("paymentStatus", v)}
+                    onValueChange={(v: string) => handleChange("paymentStatus", v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select payment status" />

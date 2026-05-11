@@ -1,4 +1,3 @@
-// components/staff/StaffForm.tsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,19 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { departments } from "@/data/mockData";
-import { Users, Mail, Phone, Calendar, Briefcase } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Users, Phone, Calendar, Briefcase } from "lucide-react";
+import { DepartmentDto } from "@/services/departmentService";
 
 interface StaffFormData {
   staffId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
   phoneNumber: string;
   dateOfBirth: string;
-  hireDate: string;
   position: string;
-  department: string;
+  departmentId: number;
   employmentType: "Full-time" | "Part-time" | "Contract" | "Temporary";
   salary: number;
   status: "Active" | "Inactive" | "On Leave" | "Terminated";
@@ -49,21 +45,18 @@ interface StaffFormData {
 interface StaffFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: StaffFormData) => void;
+  onSubmit: (data: StaffFormData & { firstName: string; lastName: string; email: string }) => void;
   initialData?: Partial<StaffFormData>;
   mode?: "add" | "edit";
+  departments: DepartmentDto[];
 }
 
 const defaultFormData: StaffFormData = {
   staffId: "",
-  firstName: "",
-  lastName: "",
-  email: "",
   phoneNumber: "",
   dateOfBirth: "",
-  hireDate: new Date().toISOString().split('T')[0],
   position: "",
-  department: "",
+  departmentId: 0,
   employmentType: "Full-time",
   salary: 40000,
   status: "Active",
@@ -98,9 +91,9 @@ const positionOptions = [
 
 const employmentTypeOptions = ["Full-time", "Part-time", "Contract", "Temporary"];
 const statusOptions = ["Active", "Inactive", "On Leave", "Terminated"];
-const departmentOptions = departments.map(d => d.departmentName);
 
-export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add" }: StaffFormProps) {
+export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add", departments }: StaffFormProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<StaffFormData>({
     ...defaultFormData,
     ...initialData,
@@ -111,15 +104,9 @@ export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add" }
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof StaffFormData, string>> = {};
 
-    if (!formData.firstName?.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName?.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email?.trim()) newErrors.email = "Email is required";
-    if (!formData.email?.includes("@") || !formData.email?.includes(".")) {
-      newErrors.email = "Invalid email format";
-    }
     if (!formData.staffId?.trim()) newErrors.staffId = "Staff ID is required";
     if (!formData.position) newErrors.position = "Position is required";
-    if (!formData.department) newErrors.department = "Department is required";
+    if (!formData.departmentId) newErrors.departmentId = "Department is required";
     if (!formData.employmentType) newErrors.employmentType = "Employment type is required";
     if (!formData.status) newErrors.status = "Status is required";
 
@@ -130,7 +117,12 @@ export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add" }
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      onSubmit({
+        ...formData,
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
+        email: user?.email || "",
+      });
       onClose();
     }
   };
@@ -173,46 +165,6 @@ export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add" }
                     className={errors.staffId ? "border-red-500" : ""}
                   />
                   {errors.staffId && <p className="text-xs text-red-500">{errors.staffId}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    placeholder="John"
-                    className={errors.firstName ? "border-red-500" : ""}
-                  />
-                  {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    placeholder="Smith"
-                    className={errors.lastName ? "border-red-500" : ""}
-                  />
-                  {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
-                      placeholder="john.smith@university.edu"
-                      className={`pl-9 ${errors.email ? "border-red-500" : ""}`}
-                    />
-                  </div>
-                  {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -272,28 +224,30 @@ export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add" }
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="department">Department *</Label>
+                  <Label htmlFor="departmentId">Department *</Label>
                   <Select 
-                    value={formData.department} 
-                    onValueChange={(v) => handleChange("department", v)}
+                    value={formData.departmentId?.toString() || ""} 
+                    onValueChange={(v) => handleChange("departmentId", parseInt(v))}
                   >
-                    <SelectTrigger className={errors.department ? "border-red-500" : ""}>
+                    <SelectTrigger className={errors.departmentId ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departmentOptions.map(option => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      {departments.map(dept => (
+                        <SelectItem key={dept.id} value={dept.id.toString()}>
+                          {dept.departmentName}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.department && <p className="text-xs text-red-500">{errors.department}</p>}
+                  {errors.departmentId && <p className="text-xs text-red-500">{errors.departmentId}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="employmentType">Employment Type *</Label>
                   <Select 
                     value={formData.employmentType} 
-                    onValueChange={(v: any) => handleChange("employmentType", v)}
+                    onValueChange={(v: string) => handleChange("employmentType", v)}
                   >
                     <SelectTrigger className={errors.employmentType ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select type" />
@@ -311,7 +265,7 @@ export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add" }
                   <Label htmlFor="status">Status *</Label>
                   <Select 
                     value={formData.status} 
-                    onValueChange={(v: any) => handleChange("status", v)}
+                    onValueChange={(v: string) => handleChange("status", v)}
                   >
                     <SelectTrigger className={errors.status ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select status" />
@@ -323,16 +277,6 @@ export function StaffForm({ open, onClose, onSubmit, initialData, mode = "add" }
                     </SelectContent>
                   </Select>
                   {errors.status && <p className="text-xs text-red-500">{errors.status}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="hireDate">Hire Date</Label>
-                  <Input
-                    id="hireDate"
-                    type="date"
-                    value={formData.hireDate}
-                    onChange={(e) => handleChange("hireDate", e.target.value)}
-                  />
                 </div>
 
                 <div className="space-y-2">

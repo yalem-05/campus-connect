@@ -1,18 +1,19 @@
-// Courses.tsx (updated)
 import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { courses, departments } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
-import { CourseForm } from "./Course/CourseForm";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { courseService, CourseDto } from "@/services/courseService";
+import { departmentService, DepartmentDto } from "@/services/departmentService";
+import { CourseForm, CourseFormData } from "./Course/CourseForm";
 import { toast } from "@/components/ui/use-toast";
 
-const columns = [
+const columns = (departments: DepartmentDto[]) => [
   { key: "courseCode", label: "Code" },
   {
     key: "courseName",
     label: "Course Name",
-    render: (c: typeof courses[0]) => (
+    render: (c: CourseDto) => (
       <div>
         <p className="font-medium">{c.courseName}</p>
         <p className="text-xs text-muted-foreground line-clamp-1">{c.description}</p>
@@ -22,49 +23,63 @@ const columns = [
   {
     key: "department",
     label: "Department",
-    render: (c: typeof courses[0]) => departments.find(d => d.id === c.departmentId)?.departmentName || "—",
+    render: (c: CourseDto) => departments.find(d => d.id === c.departmentId)?.departmentName || "—",
   },
   { key: "credits", label: "Credits" },
   {
     key: "courseLevel",
     label: "Level",
-    render: (c: typeof courses[0]) => (
+    render: (c: CourseDto) => (
       <Badge variant="outline" className="text-[11px]">{c.courseLevel}</Badge>
     ),
   },
   {
     key: "fee",
     label: "Fee",
-    render: (c: typeof courses[0]) => `$${c.fee.toLocaleString()}`,
+    render: (c: CourseDto) => `$${c.fee.toLocaleString()}`,
   },
 ];
 
 export default function Courses() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [coursesList, setCoursesList] = useState(courses);
+  const queryClient = useQueryClient();
 
-  const handleAddCourse = () => {
-    setIsFormOpen(true);
-  };
+  const { data: coursesList = [], isLoading } = useQuery({
+    queryKey: ["courses"],
+    queryFn: courseService.getAll,
+  });
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: departmentService.getAll,
+  });
 
-  const handleSubmitCourse = (data: any) => {
-    const newCourse = {
-      id: coursesList.length + 1,
-      guid: `c${coursesList.length + 1}`,
-      ...data,
-      createdDate: new Date().toISOString().split('T')[0],
-      isActive: true,
-    };
-    
-    setCoursesList([...coursesList, newCourse]);
-    
-    toast({
-      title: "Course Added",
-      description: `${newCourse.courseName} (${newCourse.courseCode}) has been added successfully.`,
+  const createMutation = useMutation({
+    mutationFn: courseService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      toast({ title: "Course Added", description: "The course has been added successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add course.", variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (data: CourseFormData) => {
+    createMutation.mutate({
+      courseCode: data.courseCode,
+      courseName: data.courseName,
+      description: data.description || undefined,
+      credits: data.credits,
+      durationInHours: data.durationInHours,
+      courseLevel: data.courseLevel,
+      prerequisites: data.prerequisites || undefined,
+      fee: data.fee,
+      departmentId: data.departmentId,
     });
-    
     setIsFormOpen(false);
   };
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading courses...</div>;
 
   return (
     <>
@@ -73,22 +88,9 @@ export default function Courses() {
           <h1 className="text-2xl font-bold">Courses</h1>
           <p className="text-sm text-muted-foreground">Browse and manage course offerings.</p>
         </div>
-        <DataTable 
-          data={coursesList} 
-          columns={columns} 
-          searchKey="courseName" 
-          title="All Courses" 
-          addLabel="Add Course" 
-          onAdd={handleAddCourse} 
-        />
+        <DataTable data={coursesList} columns={columns(departments)} searchKey="courseName" title="All Courses" addLabel="Add Course" onAdd={() => setIsFormOpen(true)} />
       </div>
-
-      <CourseForm 
-        open={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmitCourse}
-        mode="add"
-      />
+      <CourseForm open={isFormOpen} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} mode="add" departments={departments} />
     </>
   );
 }

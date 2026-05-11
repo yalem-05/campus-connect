@@ -1,70 +1,89 @@
-// Payments.tsx (updated)
 import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { payments as initialPayments, students } from "@/data/mockData";
-import { PaymentForm } from "./payments/PaymentForm";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { paymentService, PaymentDto } from "@/services/paymentService";
+import { studentService, StudentDto } from "@/services/studentService";
+import { courseService, CourseDto } from "@/services/courseService";
+import { enrollmentService, EnrollmentDto } from "@/services/enrollmentService";
+import { PaymentForm, PaymentFormData } from "./payments/PaymentForm";
 import { toast } from "@/components/ui/use-toast";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const columns = [
-  { key: "paymentId", label: "Payment ID" },
+  { key: "paymentId", label: "Receipt" },
   {
-    key: "student",
+    key: "studentName",
     label: "Student",
-    render: (p: typeof initialPayments[0]) => {
-      const s = students.find(st => st.id === p.studentId);
-      return s ? `${s.firstName} ${s.lastName}` : "—";
-    },
+    render: (p: PaymentDto) => p.studentName || `Student #${p.studentId}`,
   },
   {
     key: "amount",
     label: "Amount",
-    render: (p: typeof initialPayments[0]) => <span className="font-semibold">${p.amount.toLocaleString()}</span>,
+    render: (p: PaymentDto) => <span className="font-semibold">${p.amount.toLocaleString()}</span>,
   },
-  { key: "paymentMethod", label: "Method" },
   { key: "paymentType", label: "Type" },
+  { key: "paymentMethod", label: "Method" },
   {
     key: "paymentDate",
     label: "Date",
-    render: (p: typeof initialPayments[0]) => new Date(p.paymentDate).toLocaleDateString(),
+    render: (p: PaymentDto) => new Date(p.paymentDate).toLocaleDateString(),
   },
   {
     key: "status",
     label: "Status",
-    render: (p: typeof initialPayments[0]) => <StatusBadge status={p.status} />,
+    render: (p: PaymentDto) => <StatusBadge status={p.status} />,
   },
 ];
 
 export default function Payments() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [paymentsList, setPaymentsList] = useState(initialPayments);
+  const queryClient = useQueryClient();
 
-  const handleAddPayment = () => {
-    setIsFormOpen(true);
-  };
+  const { data: paymentsList = [], isLoading } = useQuery({
+    queryKey: ["payments"],
+    queryFn: paymentService.getAll,
+  });
+  const { data: students = [] } = useQuery({
+    queryKey: ["students"],
+    queryFn: studentService.getAll,
+  });
+  const { data: courses = [] } = useQuery({
+    queryKey: ["courses"],
+    queryFn: courseService.getAll,
+  });
+  const { data: enrollments = [] } = useQuery({
+    queryKey: ["enrollments"],
+    queryFn: enrollmentService.getAll,
+  });
 
-  const handleSubmitPayment = (data: any) => {
-    const newPayment = {
-      id: paymentsList.length + 1,
-      guid: `p${paymentsList.length + 1}`,
-      ...data,
-      createdDate: new Date().toISOString().split('T')[0],
-      isActive: true,
-    };
-    
-    setPaymentsList([...paymentsList, newPayment]);
-    
-    const student = students.find(s => s.id === data.studentId);
-    
-    toast({
-      title: "Payment Recorded",
-      description: `${data.paymentType} payment of $${data.amount.toLocaleString()} recorded for ${student?.firstName} ${student?.lastName}.`,
+  const createMutation = useMutation({
+    mutationFn: paymentService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      toast({ title: "Payment Recorded", description: "The payment has been recorded successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to record payment.", variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (data: PaymentFormData) => {
+    createMutation.mutate({
+      studentId: data.studentId,
+      amount: data.amount,
+      paymentMethod: data.paymentMethod || undefined,
+      paymentType: data.paymentType,
+      referenceNumber: data.referenceNumber || undefined,
+      semester: data.semester || undefined,
+      academicYear: data.academicYear || undefined,
+      description: data.description || undefined,
     });
-    
     setIsFormOpen(false);
   };
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading payments...</div>;
 
   return (
     <>
@@ -85,22 +104,9 @@ export default function Payments() {
             </Button>
           </div>
         </div>
-        <DataTable 
-          data={paymentsList} 
-          columns={columns} 
-          searchKey="paymentId" 
-          title="All Payments" 
-          addLabel="Record Payment" 
-          onAdd={handleAddPayment} 
-        />
+        <DataTable data={paymentsList} columns={columns} searchKey="paymentId" title="All Payments" addLabel="Record Payment" onAdd={() => setIsFormOpen(true)} />
       </div>
-
-      <PaymentForm 
-        open={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmitPayment}
-        mode="add"
-      />
+      <PaymentForm open={isFormOpen} onClose={() => setIsFormOpen(false)} onSubmit={handleSubmit} mode="add" students={students} courses={courses} enrollments={enrollments} />
     </>
   );
 }

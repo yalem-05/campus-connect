@@ -1,192 +1,172 @@
-// Staff.tsx
 import { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { staff as initialStaff, departments } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { staffService, StaffDto } from "@/services/staffService";
+import { departmentService, DepartmentDto } from "@/services/departmentService";
 import { StaffForm } from "./Staffs/StaffForm";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
-import { Briefcase, Building2, Calendar, DollarSign } from "lucide-react";
-
-const columns = [
-  { key: "staffId", label: "ID" },
-  {
-    key: "name",
-    label: "Name",
-    render: (s: typeof initialStaff[0]) => (
-      <div className="flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/10 text-xs font-semibold text-secondary">
-          {s.firstName[0]}{s.lastName[0]}
-        </div>
-        <div>
-          <p className="font-medium">{s.firstName} {s.lastName}</p>
-          <p className="text-xs text-muted-foreground">{s.email}</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    key: "position",
-    label: "Position",
-    render: (s: typeof initialStaff[0]) => (
-      <div className="flex items-center gap-1">
-        <Briefcase className="h-3 w-3 text-muted-foreground" />
-        <span className="text-sm">{s.position}</span>
-      </div>
-    ),
-  },
-  {
-    key: "department",
-    label: "Department",
-    render: (s: typeof initialStaff[0]) => (
-      <div className="flex items-center gap-1">
-        <Building2 className="h-3 w-3 text-muted-foreground" />
-        <span className="text-sm">{s.department}</span>
-      </div>
-    ),
-  },
-  {
-    key: "employmentType",
-    label: "Type",
-    render: (s: typeof initialStaff[0]) => (
-      <Badge variant="outline" className="text-[11px]">
-        {s.employmentType}
-      </Badge>
-    ),
-  },
-  {
-    key: "salary",
-    label: "Salary",
-    render: (s: typeof initialStaff[0]) => (
-      <div className="flex items-center gap-1">
-        <DollarSign className="h-3 w-3 text-muted-foreground" />
-        <span className="text-sm">{s.salary.toLocaleString()}</span>
-      </div>
-    ),
-  },
-  {
-    key: "hireDate",
-    label: "Hire Date",
-    render: (s: typeof initialStaff[0]) => new Date(s.hireDate).toLocaleDateString(),
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (s: typeof initialStaff[0]) => <StatusBadge status={s.status} />,
-  },
-];
-
-// Sample staff data (add this to your mockData.ts)
-const sampleStaffData = [
-  { 
-    id: 1, 
-    guid: "st1", 
-    staffId: "STF-001", 
-    firstName: "John", 
-    lastName: "Smith", 
-    email: "john.smith@university.edu", 
-    phoneNumber: "555-0101", 
-    dateOfBirth: "1985-05-15", 
-    hireDate: "2020-01-15", 
-    position: "Administrative Assistant", 
-    department: "Computer Science", 
-    employmentType: "Full-time", 
-    salary: 45000, 
-    status: "Active", 
-    supervisor: "Dr. Alan Turing", 
-    officeLocation: "Building A, Room 101", 
-    qualifications: "Bachelor's Degree in Business Administration, 5 years experience", 
-    emergencyContactName: "Sarah Smith", 
-    emergencyContactNumber: "555-0102", 
-    address: "123 Main St", 
-    city: "Springfield", 
-    state: "IL", 
-    zipCode: "62701", 
-    createdDate: "2020-01-15", 
-    isActive: true 
-  },
-  { 
-    id: 2, 
-    guid: "st2", 
-    staffId: "STF-002", 
-    firstName: "Mary", 
-    lastName: "Johnson", 
-    email: "mary.johnson@university.edu", 
-    phoneNumber: "555-0103", 
-    dateOfBirth: "1990-08-22", 
-    hireDate: "2021-06-01", 
-    position: "Student Services Coordinator", 
-    department: "Student Affairs", 
-    employmentType: "Full-time", 
-    salary: 52000, 
-    status: "Active", 
-    supervisor: "Dr. Jane Wilson", 
-    officeLocation: "Student Center, Room 205", 
-    qualifications: "Master's in Counseling, 3 years experience", 
-    emergencyContactName: "Robert Johnson", 
-    emergencyContactNumber: "555-0104", 
-    address: "456 Oak Ave", 
-    city: "Springfield", 
-    state: "IL", 
-    zipCode: "62702", 
-    createdDate: "2021-06-01", 
-    isActive: true 
-  },
-  { 
-    id: 3, 
-    guid: "st3", 
-    staffId: "STF-003", 
-    firstName: "Robert", 
-    lastName: "Williams", 
-    email: "robert.williams@university.edu", 
-    phoneNumber: "555-0105", 
-    dateOfBirth: "1978-11-10", 
-    hireDate: "2019-03-20", 
-    position: "IT Support Specialist", 
-    department: "Information Technology", 
-    employmentType: "Full-time", 
-    salary: 58000, 
-    status: "Active", 
-    supervisor: "CIO Office", 
-    officeLocation: "Tech Center, Room 301", 
-    qualifications: "Bachelor's in IT, CompTIA Certified", 
-    emergencyContactName: "Lisa Williams", 
-    emergencyContactNumber: "555-0106", 
-    address: "789 Pine St", 
-    city: "Springfield", 
-    state: "IL", 
-    zipCode: "62703", 
-    createdDate: "2019-03-20", 
-    isActive: true 
-  }
-];
+import { Briefcase, Building2, DollarSign, Edit, Trash2 } from "lucide-react";
 
 export default function Staff() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [staffList, setStaffList] = useState(initialStaff || sampleStaffData);
+  const [editingStaff, setEditingStaff] = useState<StaffDto | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const handleAddStaff = () => {
+  const { data: staffList = [], isLoading } = useQuery({
+    queryKey: ["staff"],
+    queryFn: staffService.getAll,
+  });
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: departmentService.getAll,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: staffService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
+      toast({ title: "Staff Member Added", description: "The staff member has been added successfully." });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to add staff member.", variant: "destructive" }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => staffService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
+      toast({ title: "Staff Member Updated", description: "The staff member has been updated successfully." });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to update staff member.", variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: staffService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
+      toast({ title: "Staff Member Deleted", description: "The staff member has been removed." });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to delete staff member.", variant: "destructive" }),
+  });
+
+  const columns = [
+    { key: "staffId", label: "ID" },
+    {
+      key: "name",
+      label: "Name",
+      render: (s: StaffDto) => (
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/10 text-xs font-semibold text-secondary">
+            {s.firstName[0]}{s.lastName[0]}
+          </div>
+          <div>
+            <p className="font-medium">{s.firstName} {s.lastName}</p>
+            <p className="text-xs text-muted-foreground">{s.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "position",
+      label: "Position",
+      render: (s: StaffDto) => (
+        <div className="flex items-center gap-1">
+          <Briefcase className="h-3 w-3 text-muted-foreground" />
+          <span className="text-sm">{s.position}</span>
+        </div>
+      ),
+    },
+    {
+      key: "department",
+      label: "Department",
+      render: (s: StaffDto) => (
+        <div className="flex items-center gap-1">
+          <Building2 className="h-3 w-3 text-muted-foreground" />
+          <span className="text-sm">{s.departmentName || "—"}</span>
+        </div>
+      ),
+    },
+    {
+      key: "employmentType",
+      label: "Type",
+      render: (s: StaffDto) => (
+        <Badge variant="outline" className="text-[11px]">{s.employmentType}</Badge>
+      ),
+    },
+    {
+      key: "salary",
+      label: "Salary",
+      render: (s: StaffDto) => (
+        <div className="flex items-center gap-1">
+          <DollarSign className="h-3 w-3 text-muted-foreground" />
+          <span className="text-sm">{s.salary.toLocaleString()}</span>
+        </div>
+      ),
+    },
+    {
+      key: "hireDate",
+      label: "Hire Date",
+      render: (s: StaffDto) => new Date(s.hireDate).toLocaleDateString(),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (s: StaffDto) => <StatusBadge status={s.status} />,
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (s: StaffDto) => (
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(s)}>
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingId(s.id)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  const handleAdd = () => {
+    setEditingStaff(null);
     setIsFormOpen(true);
   };
 
-  const handleSubmitStaff = (data: any) => {
-    const newStaff = {
-      id: staffList.length + 1,
-      guid: `st${staffList.length + 1}`,
-      ...data,
-      createdDate: new Date().toISOString().split('T')[0],
-      isActive: true,
-    };
-    
-    setStaffList([...staffList, newStaff]);
-    
-    toast({
-      title: "Staff Member Added",
-      description: `${newStaff.firstName} ${newStaff.lastName} has been added as ${newStaff.position}.`,
-    });
-    
-    setIsFormOpen(false);
+  const handleEdit = (staff: StaffDto) => {
+    setEditingStaff(staff);
+    setIsFormOpen(true);
   };
+
+  const handleSubmit = (data: any) => {
+    if (editingStaff) {
+      const { firstName, lastName, email, staffId, dateOfBirth, ...rest } = data;
+      updateMutation.mutate({ id: editingStaff.id, data: rest });
+    } else {
+      createMutation.mutate(data);
+    }
+    setIsFormOpen(false);
+    setEditingStaff(null);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingId !== null) {
+      deleteMutation.mutate(deletingId);
+      setDeletingId(null);
+    }
+  };
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading staff...</div>;
 
   return (
     <>
@@ -195,22 +175,59 @@ export default function Staff() {
           <h1 className="text-2xl font-bold">Staff</h1>
           <p className="text-sm text-muted-foreground">Manage administrative and support staff members.</p>
         </div>
-        <DataTable 
-          data={staffList} 
-          columns={columns} 
-          searchKey="lastName" 
-          title="All Staff Members" 
-          addLabel="Add Staff" 
-          onAdd={handleAddStaff} 
+        <DataTable
+          data={staffList}
+          columns={columns}
+          searchKey="lastName"
+          title="All Staff Members"
+          addLabel="Add Staff"
+          onAdd={handleAdd}
         />
       </div>
 
-      <StaffForm 
+      <StaffForm
         open={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleSubmitStaff}
-        mode="add"
+        onClose={() => { setIsFormOpen(false); setEditingStaff(null); }}
+        onSubmit={handleSubmit}
+        initialData={editingStaff ? {
+          staffId: editingStaff.staffId,
+          phoneNumber: editingStaff.phoneNumber || "",
+          dateOfBirth: editingStaff.dateOfBirth?.split("T")[0] || "",
+          position: editingStaff.position,
+          departmentId: editingStaff.departmentId || 0,
+          employmentType: editingStaff.employmentType as any,
+          salary: editingStaff.salary,
+          status: editingStaff.status as any,
+          supervisor: editingStaff.supervisor,
+          officeLocation: editingStaff.officeLocation,
+          qualifications: editingStaff.qualifications,
+          emergencyContactName: editingStaff.emergencyContactName,
+          emergencyContactNumber: editingStaff.emergencyContactNumber,
+          address: editingStaff.address,
+          city: editingStaff.city,
+          state: editingStaff.state,
+          zipCode: editingStaff.zipCode,
+        } : undefined}
+        mode={editingStaff ? "edit" : "add"}
+        departments={departments}
       />
+
+      <AlertDialog open={deletingId !== null} onOpenChange={() => setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this staff member? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

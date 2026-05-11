@@ -1,6 +1,9 @@
-// Departments.tsx (updated)
 import { useState } from "react";
-import { departments as initialDepartments, students, courses, faculty } from "@/data/mockData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { departmentService, DepartmentDto, CreateDepartmentDto, UpdateDepartmentDto } from "@/services/departmentService";
+import { studentService, StudentDto } from "@/services/studentService";
+import { courseService, CourseDto } from "@/services/courseService";
+import { facultyService, FacultyDto } from "@/services/facultyService";
 import { Building2, GraduationCap, BookOpen, Users, Plus, Edit, Trash2, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DepartmentForm } from "./departments/DepartmentForm";
+import { DepartmentForm, DepartmentFormData } from "./departments/DepartmentForm";
 import { toast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
@@ -24,31 +27,80 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Departments() {
-  const [departments, setDepartments] = useState(initialDepartments);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingDepartment, setEditingDepartment] = useState<any>(null);
-  const [deletingDepartment, setDeletingDepartment] = useState<any>(null);
+  const [editingDepartment, setEditingDepartment] = useState<DepartmentDto | null>(null);
+  const [deletingDepartment, setDeletingDepartment] = useState<DepartmentDto | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: departments = [], isLoading } = useQuery({
+    queryKey: ["departments"],
+    queryFn: departmentService.getAll,
+  });
+  const { data: students = [] } = useQuery({
+    queryKey: ["students"],
+    queryFn: studentService.getAll,
+  });
+  const { data: courses = [] } = useQuery({
+    queryKey: ["courses"],
+    queryFn: courseService.getAll,
+  });
+  const { data: faculties = [] } = useQuery({
+    queryKey: ["faculty"],
+    queryFn: facultyService.getAll,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: departmentService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      toast({ title: "Department Created", description: "The department has been added successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create department.", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateDepartmentDto }) => departmentService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      toast({ title: "Department Updated", description: "The department has been updated successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update department.", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: departmentService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      toast({ title: "Department Deleted", description: "The department has been removed." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete department.", variant: "destructive" });
+    },
+  });
 
   const handleAddDepartment = () => {
     setEditingDepartment(null);
     setIsFormOpen(true);
   };
 
-  const handleEditDepartment = (department: any) => {
+  const handleEditDepartment = (department: DepartmentDto) => {
     setEditingDepartment(department);
     setIsFormOpen(true);
   };
 
-  const handleDeleteDepartment = (department: any) => {
+  const handleDeleteDepartment = (department: DepartmentDto) => {
     setDeletingDepartment(department);
   };
 
   const confirmDelete = () => {
     if (deletingDepartment) {
-      // Check if department has any associated records
-      const hasStudents = students.some(s => s.departmentId === deletingDepartment.id);
-      const hasCourses = courses.some(c => c.departmentId === deletingDepartment.id);
-      const hasFaculty = faculty.some(f => f.departmentId === deletingDepartment.id);
+      const hasStudents = students.some((s: StudentDto) => s.departmentId === deletingDepartment.id);
+      const hasCourses = courses.some((c: CourseDto) => c.departmentId === deletingDepartment.id);
+      const hasFaculty = faculties.some((f: FacultyDto) => f.departmentId === deletingDepartment.id);
 
       if (hasStudents || hasCourses || hasFaculty) {
         toast({
@@ -57,47 +109,38 @@ export default function Departments() {
           variant: "destructive",
         });
       } else {
-        setDepartments(departments.filter(d => d.id !== deletingDepartment.id));
-        toast({
-          title: "Department Deleted",
-          description: `${deletingDepartment.departmentName} has been removed.`,
-        });
+        deleteMutation.mutate(deletingDepartment.id);
       }
       setDeletingDepartment(null);
     }
   };
 
-  const handleSubmitDepartment = (data: any) => {
+  const handleSubmitDepartment = (data: DepartmentFormData) => {
     if (editingDepartment) {
-      // Edit existing department
-      const updatedDepartments = departments.map(dept =>
-        dept.id === editingDepartment.id
-          ? { ...dept, ...data, updatedDate: new Date().toISOString().split('T')[0] }
-          : dept
-      );
-      setDepartments(updatedDepartments);
-      toast({
-        title: "Department Updated",
-        description: `${data.departmentName} has been updated successfully.`,
+      updateMutation.mutate({
+        id: editingDepartment.id,
+        data: {
+          description: data.description,
+          headOfDepartment: data.headOfDepartment,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+        },
       });
     } else {
-      // Add new department
-      const newDepartment = {
-        id: departments.length + 1,
-        guid: `d${departments.length + 1}`,
-        ...data,
-        createdDate: new Date().toISOString().split('T')[0],
-        isActive: true,
-      };
-      setDepartments([...departments, newDepartment]);
-      toast({
-        title: "Department Created",
-        description: `${data.departmentName} has been added successfully.`,
+      createMutation.mutate({
+        departmentCode: data.departmentCode,
+        departmentName: data.departmentName,
+        description: data.description || undefined,
+        headOfDepartment: data.headOfDepartment || undefined,
+        contactEmail: data.contactEmail || undefined,
+        contactPhone: data.contactPhone || undefined,
       });
     }
     setIsFormOpen(false);
     setEditingDepartment(null);
   };
+
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading departments...</div>;
 
   return (
     <>
@@ -115,10 +158,10 @@ export default function Departments() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {departments.map((dept) => {
-            const deptStudents = students.filter(s => s.departmentId === dept.id).length;
-            const deptCourses = courses.filter(c => c.departmentId === dept.id).length;
-            const deptFaculty = faculty.filter(f => f.departmentId === dept.id).length;
-            
+            const deptStudents = students.filter((s: StudentDto) => s.departmentId === dept.id).length;
+            const deptCourses = courses.filter((c: CourseDto) => c.departmentId === dept.id).length;
+            const deptFaculty = faculties.filter((f: FacultyDto) => f.departmentId === dept.id).length;
+
             return (
               <Card key={dept.id} className="relative group hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-5">
@@ -134,7 +177,7 @@ export default function Departments() {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteDepartment(dept)}
                           className="text-red-600"
                         >
@@ -154,30 +197,30 @@ export default function Departments() {
                       <p className="text-xs text-muted-foreground">{dept.departmentCode}</p>
                     </div>
                   </div>
-                  
+
                   <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{dept.description}</p>
-                  
+
                   <p className="mt-2 text-xs text-muted-foreground">
                     Head: <span className="font-medium text-foreground">{dept.headOfDepartment}</span>
                   </p>
-                  
+
                   {dept.contactEmail && (
                     <p className="mt-1 text-xs text-muted-foreground truncate">
                       Email: {dept.contactEmail}
                     </p>
                   )}
-                  
+
                   <div className="mt-4 flex gap-4 border-t pt-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <GraduationCap className="h-3.5 w-3.5" /> 
+                      <GraduationCap className="h-3.5 w-3.5" />
                       {deptStudents} Students
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <BookOpen className="h-3.5 w-3.5" /> 
+                      <BookOpen className="h-3.5 w-3.5" />
                       {deptCourses} Courses
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Users className="h-3.5 w-3.5" /> 
+                      <Users className="h-3.5 w-3.5" />
                       {deptFaculty} Faculty
                     </div>
                   </div>
@@ -188,7 +231,7 @@ export default function Departments() {
         </div>
       </div>
 
-      <DepartmentForm 
+      <DepartmentForm
         open={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
@@ -205,12 +248,6 @@ export default function Departments() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the department "{deletingDepartment?.departmentName}".
-              {students.some(s => s.departmentId === deletingDepartment?.id) && 
-                " This department has students assigned to it and cannot be deleted."}
-              {courses.some(c => c.departmentId === deletingDepartment?.id) && 
-                " This department has courses assigned to it and cannot be deleted."}
-              {faculty.some(f => f.departmentId === deletingDepartment?.id) && 
-                " This department has faculty members assigned to it and cannot be deleted."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

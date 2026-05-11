@@ -48,11 +48,11 @@ function ProtectedRoute({
     );
   }
 
-  // if (!isAuthenticated) {
-  //   return <Navigate to="/login" state={{ from: location }} replace />;
-  // }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && user && !allowedRoles.includes(user.role as UserRole)) {
     const rolePath = user.role.toLowerCase();
     return <Navigate to={`/${rolePath}`} replace />;
   }

@@ -2,20 +2,24 @@ import { useAuth } from "@/context/AuthContext";
 import { BookOpen, Users, Calendar, ClipboardList, Clock, GraduationCap, TrendingUp, AlertCircle } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { courses as allCourses, faculty, announcements } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { courseService, CourseDto } from "@/services/courseService";
+import { announcementService, AnnouncementDto } from "@/services/announcementService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function FacultyDashboard() {
   const { user } = useAuth();
-  
-  const facultyCourses = allCourses.slice(0, 4);
+
+  const { data: courses = [] } = useQuery({ queryKey: ["courses"], queryFn: courseService.getAll });
+  const { data: announcements = [] } = useQuery({ queryKey: ["announcements"], queryFn: announcementService.getAll });
+
+  const facultyCourses = (courses as CourseDto[]).slice(0, 4);
   const todayClasses = [
     { course: "CS101 - Data Structures", time: "9:00 AM - 10:30 AM", room: "Room 301", students: 45 },
     { course: "CS201 - Algorithms", time: "11:00 AM - 12:30 PM", room: "Room 205", students: 38 },
     { course: "CS301 - Database Systems", time: "2:00 PM - 3:30 PM", room: "Lab 102", students: 32 },
   ];
-
   const pendingGrades = [
     { course: "CS101 - Data Structures", assignment: "Midterm Exam", students: 45, due: "Apr 5, 2026" },
     { course: "CS201 - Algorithms", assignment: "Assignment 5", students: 38, due: "Apr 7, 2026" },
@@ -24,8 +28,8 @@ export default function FacultyDashboard() {
   const stats = [
     { title: "Teaching Courses", value: facultyCourses.length, subtitle: "This semester", icon: BookOpen, variant: "primary" as const },
     { title: "Total Students", value: 156, subtitle: "All classes", icon: Users, variant: "accent" as const },
-    { title: "Classes Today", value: 3, subtitle: "Today", icon: Calendar, variant: "warning" as const },
-    { title: "Pending Grades", value: 23, subtitle: "To submit", icon: ClipboardList, variant: "default" as const },
+    { title: "Classes Today", value: todayClasses.length, subtitle: "Today", icon: Calendar, variant: "warning" as const },
+    { title: "Pending Grades", value: pendingGrades.reduce((s, g) => s + g.students, 0), subtitle: "To submit", icon: ClipboardList, variant: "default" as const },
   ];
 
   return (
@@ -87,7 +91,7 @@ export default function FacultyDashboard() {
               <ClipboardList className="h-4 w-4 text-primary" />
               <h3 className="font-semibold">Pending Grades</h3>
             </div>
-            <span className="text-xs text-muted-foreground">2 items</span>
+            <span className="text-xs text-muted-foreground">{pendingGrades.length} items</span>
           </div>
           <div className="space-y-4">
             {pendingGrades.map((item, i) => (
@@ -117,7 +121,7 @@ export default function FacultyDashboard() {
             <h3 className="font-semibold">My Courses</h3>
           </div>
           <div className="space-y-3">
-            {facultyCourses.map((course) => (
+            {facultyCourses.map((course: CourseDto) => (
               <div key={course.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                 <div>
                   <p className="text-sm font-medium">{course.courseName}</p>
@@ -135,7 +139,7 @@ export default function FacultyDashboard() {
             <h3 className="font-semibold">Announcements</h3>
           </div>
           <div className="space-y-3">
-            {announcements.slice(0, 3).map((a) => (
+            {(announcements as AnnouncementDto[]).slice(0, 3).map((a) => (
               <div key={a.id} className="rounded-lg border border-border/50 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>

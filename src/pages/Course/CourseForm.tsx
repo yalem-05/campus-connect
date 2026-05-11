@@ -19,9 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { departments } from "@/data/mockData";
+import { DepartmentDto } from "@/services/departmentService";
 
-interface CourseFormData {
+export interface CourseFormData {
   courseCode: string;
   courseName: string;
   description: string;
@@ -44,6 +44,7 @@ interface CourseFormProps {
   onSubmit: (data: CourseFormData) => void;
   initialData?: Partial<CourseFormData>;
   mode?: "add" | "edit";
+  departments: DepartmentDto[];
 }
 
 const defaultFormData: CourseFormData = {
@@ -67,7 +68,7 @@ const levelOptions = ["Beginner", "Intermediate", "Advanced"];
 const creditOptions = [1, 2, 3, 4, 5, 6];
 const durationOptions = [15, 30, 45, 60, 90, 120];
 
-export function CourseForm({ open, onClose, onSubmit, initialData, mode = "add" }: CourseFormProps) {
+export function CourseForm({ open, onClose, onSubmit, initialData, mode = "add", departments }: CourseFormProps) {
   const [formData, setFormData] = useState<CourseFormData>({
     ...defaultFormData,
     ...initialData,
@@ -226,7 +227,7 @@ export function CourseForm({ open, onClose, onSubmit, initialData, mode = "add" 
                   <Label htmlFor="courseLevel">Course Level *</Label>
                   <Select 
                     value={formData.courseLevel} 
-                    onValueChange={(v: any) => handleChange("courseLevel", v)}
+                    onValueChange={(v: string) => handleChange("courseLevel", v)}
                   >
                     <SelectTrigger className={errors.courseLevel ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select level" />

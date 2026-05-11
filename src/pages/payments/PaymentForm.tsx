@@ -19,12 +19,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { students, enrollments, courses } from "@/data/mockData";
+import { StudentDto } from "@/services/studentService";
+import { CourseDto } from "@/services/courseService";
+import { EnrollmentDto } from "@/services/enrollmentService";
 import { DollarSign, CreditCard, Calendar, UserIcon, FileText, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
-interface PaymentFormData {
+export interface PaymentFormData {
   paymentId: string;
   studentId: number;
   amount: number;
@@ -48,6 +50,9 @@ interface PaymentFormProps {
   onSubmit: (data: PaymentFormData) => void;
   initialData?: Partial<PaymentFormData>;
   mode?: "add" | "edit";
+  students: StudentDto[];
+  courses: CourseDto[];
+  enrollments: EnrollmentDto[];
 }
 
 const defaultFormData: PaymentFormData = {
@@ -82,30 +87,24 @@ const paymentMethods = [
 
 const paymentTypes = [
   "Tuition",
-  "Registration Fee",
-  "Library Fee",
-  "Lab Fee",
-  "Sports Fee",
-  "Hostel Fee",
-  "Transport Fee",
-  "Exam Fee",
-  "Late Fee",
-  "Scholarship",
-  "Refund"
+  "Library",
+  "Lab",
+  "Hostel",
+  "Other"
 ];
 
-const statusOptions = ["Completed", "Pending", "Processing", "Failed", "Refunded"];
+const statusOptions = ["Pending", "Completed", "Failed", "Refunded"];
 const semesterOptions = ["Fall", "Spring", "Summer", "Winter"];
 const yearOptions = [2022, 2023, 2024, 2025, 2026];
 
-export function PaymentForm({ open, onClose, onSubmit, initialData, mode = "add" }: PaymentFormProps) {
+export function PaymentForm({ open, onClose, onSubmit, initialData, mode = "add", students, courses, enrollments }: PaymentFormProps) {
   const [formData, setFormData] = useState<PaymentFormData>({
     ...defaultFormData,
     ...initialData,
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof PaymentFormData, string>>>({});
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentDto | null>(null);
   const [outstandingBalance, setOutstandingBalance] = useState<number>(0);
   const [showBalanceWarning, setShowBalanceWarning] = useState(false);
 
@@ -349,7 +348,7 @@ export function PaymentForm({ open, onClose, onSubmit, initialData, mode = "add"
                   <Label htmlFor="status">Payment Status</Label>
                   <Select 
                     value={formData.status} 
-                    onValueChange={(v: any) => handleChange("status", v)}
+                    onValueChange={(v: string) => handleChange("status", v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
